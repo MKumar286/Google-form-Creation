@@ -1,143 +1,330 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Excel to Google Form Generator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body{
-            font-family: Arial;
-            margin:20px;
-        }
-        table{
-            border-collapse: collapse;
-            width:100%;
-        }
-        th,td{
-            border:1px solid #ddd;
-            padding:8px;
-        }
-        th{
-            background:#f2f2f2;
-        }
-        select{
-            width:150px;
-        }
-    </style>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Excel to Google Form AI</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins;
+}
+
+body{
+background:#f5f7fb;
+padding:20px;
+}
+
+.container{
+max-width:1400px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+margin-bottom:10px;
+}
+
+.subtitle{
+text-align:center;
+margin-bottom:25px;
+color:gray;
+}
+
+.uploadBox{
+
+border:3px dashed #4285F4;
+background:white;
+padding:50px;
+text-align:center;
+border-radius:15px;
+cursor:pointer;
+
+}
+
+.uploadBox:hover{
+background:#f8fbff;
+}
+
+input[type=file]{
+display:none;
+}
+
+.uploadIcon{
+
+font-size:50px;
+margin-bottom:15px;
+
+}
+
+.fileName{
+
+margin-top:15px;
+font-weight:bold;
+
+}
+
+.main{
+
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+margin-top:25px;
+
+}
+
+.card{
+
+background:white;
+padding:20px;
+border-radius:15px;
+box-shadow:0px 5px 15px rgba(0,0,0,.08);
+
+}
+
+.card h2{
+
+margin-bottom:15px;
+
+}
+
+#questions{
+
+max-height:600px;
+overflow:auto;
+
+}
+
+.question{
+
+border:1px solid #ddd;
+padding:15px;
+border-radius:10px;
+margin-bottom:10px;
+
+}
+
+.question label{
+
+font-weight:bold;
+
+}
+
+.question select{
+
+width:100%;
+padding:8px;
+margin-top:8px;
+
+}
+
+.preview{
+
+border:1px solid #ddd;
+padding:20px;
+border-radius:10px;
+background:#fafafa;
+
+}
+
+.btn{
+
+background:#4285F4;
+color:white;
+padding:12px 20px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+margin-top:15px;
+
+}
+
+.btn:hover{
+
+opacity:.9;
+
+}
+
+.actionButtons{
+
+margin-top:20px;
+
+}
+
+#status{
+
+margin-top:15px;
+color:green;
+font-weight:bold;
+
+}
+
+@media(max-width:900px){
+
+.main{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+</style>
+
 </head>
+
 <body>
 
-<h2>Excel to Google Form Generator</h2>
+<div class="container">
 
-<input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+<h1>Excel to Google Form AI</h1>
 
-<br><br>
+<div class="subtitle">
+Upload your Excel sheet and generate Google Forms intelligently.
+</div>
 
-<div id="output"></div>
+<label class="uploadBox">
+
+<div class="uploadIcon">
+📁
+</div>
+
+<h2>Drop Excel File Here</h2>
+
+<p>
+or click to browse
+</p>
+
+<input type="file"
+id="excelFile"
+accept=".xlsx,.xls,.csv">
+
+<div class="fileName" id="fileName">
+
+No file selected
+
+</div>
+
+</label>
+
+<div id="status"></div>
+
+<div class="actionButtons">
+
+<button class="btn" id="analyzeBtn">
+
+🤖 Analyze Excel
+
+</button>
+
+<button class="btn">
+
+👀 Preview Form
+
+</button>
+
+<button class="btn">
+
+🚀 Generate Google Form
+
+</button>
+
+</div>
+
+<div class="main">
+
+<div class="card">
+
+<h2>
+
+Suggested Questions
+
+</h2>
+
+<div id="questions">
+
+<div class="question">
+
+Waiting for Excel upload...
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+
+Google Form Preview
+
+</h2>
+
+<div class="preview" id="preview">
+
+<h3>Form Title</h3>
+
+<hr><br>
+
+Upload an Excel file to preview the form.
+
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 <script>
 
-document.getElementById("excelFile").addEventListener("change", function(e){
+let uploadedFile=null;
 
-    let file=e.target.files[0];
+document
+.getElementById("excelFile")
+.addEventListener("change",function(e){
 
-    let reader=new FileReader();
+uploadedFile=e.target.files[0];
 
-    reader.onload=function(event){
+document
+.getElementById("fileName")
+.innerHTML=uploadedFile.name;
 
-        let data=new Uint8Array(event.target.result);
-
-        let workbook=XLSX.read(data,{type:"array"});
-
-        let sheet=workbook.Sheets[workbook.SheetNames[0]];
-
-        let json=XLSX.utils.sheet_to_json(sheet,{header:1});
-
-        displayQuestions(json);
-
-    };
-
-    reader.readAsArrayBuffer(file);
+document
+.getElementById("status")
+.innerHTML="✅ File uploaded successfully.";
 
 });
 
-function detectType(values){
+document
+.getElementById("analyzeBtn")
+.addEventListener("click",function(){
 
-    values=values.filter(x=>x!="");
+if(uploadedFile==null){
 
-    let unique=[...new Set(values)];
+alert("Please upload Excel file.");
 
-    if(unique.length<=5 && unique.length>1){
-        return "Multiple Choice";
-    }
-
-    if(values.every(v=>!isNaN(v))){
-        return "Short Answer";
-    }
-
-    return "Short Answer";
+return;
 
 }
 
-function displayQuestions(data){
+document
+.getElementById("status")
+.innerHTML="🤖 AI is analyzing your Excel...";
 
-    let headers=data[0];
-
-    let html="<table>";
-
-    html+="<tr>";
-    html+="<th>Column</th>";
-    html+="<th>Suggested Type</th>";
-    html+="<th>Options Detected</th>";
-    html+="</tr>";
-
-    for(let i=0;i<headers.length;i++){
-
-        let values=[];
-
-        for(let j=1;j<data.length;j++){
-            values.push(data[j][i]||"");
-        }
-
-        let type=detectType(values);
-
-        let unique=[...new Set(values.filter(x=>x!=""))];
-
-        html+="<tr>";
-
-        html+="<td>"+headers[i]+"</td>";
-
-        html+="<td>";
-        html+="<select>";
-        html+="<option "+(type=="Short Answer"?"selected":"")+">Short Answer</option>";
-        html+="<option "+(type=="Multiple Choice"?"selected":"")+">Multiple Choice</option>";
-        html+="<option>Dropdown</option>";
-        html+="<option>Checkbox</option>";
-        html+="<option>Paragraph</option>";
-        html+="</select>";
-        html+="</td>";
-
-        html+="<td>";
-
-        if(unique.length<=10){
-            html+=unique.join(", ");
-        }
-
-        html+="</td>";
-
-        html+="</tr>";
-
-    }
-
-    html+="</table>";
-
-    html+="<br>";
-    html+="<button onclick='alert(\"Next step: Generate Google Form\")'>Continue</button>";
-
-    document.getElementById("output").innerHTML=html;
-
-}
+});
 
 </script>
 
 </body>
+
 </html>
