@@ -335,9 +335,157 @@ sheet,
 {header:1}
 );
 
-alert(
-"Excel Loaded Successfully"
-);
+  function displayColumns(){
+
+    if(excelData.length==0) return;
+
+    let headers=excelData[0];
+
+    let html="";
+
+    for(let i=0;i<headers.length;i++){
+
+        html+=`
+        <div class="question">
+
+        <label>
+        Question Title
+        </label>
+
+        <input type="text"
+        value="${headers[i]}">
+
+        <br><br>
+
+        <label>
+        Question Type
+        </label>
+
+        <select>
+
+        <option>Short Answer</option>
+
+        <option>Paragraph</option>
+
+        <option>Multiple Choice</option>
+
+        <option>Checkboxes</option>
+
+        <option>Dropdown</option>
+
+        <option>Date</option>
+
+        <option>Time</option>
+
+        <option>Email</option>
+
+        <option>Phone Number</option>
+
+        <option>Number</option>
+
+        <option>File Upload</option>
+
+        <option>Resume Upload</option>
+
+        <option>Other</option>
+
+        </select>
+
+        <br><br>
+
+        <label>
+
+        <input type="checkbox">
+
+        Required
+
+        </label>
+
+        <br><br>
+
+        <label>
+
+        Options
+
+        </label>
+
+        <input type="text"
+        placeholder="Option1,Option2">
+
+        </div>
+        `;
+
+    }
+
+    document.getElementById(
+    "questions"
+    ).innerHTML=html;
+
+    updatePreview();
+
+}
+
+  function updatePreview(){
+
+    let html="";
+
+    html+="<h3>";
+    html+=document.getElementById(
+    "formTitle"
+    ).value;
+    html+="</h3>";
+
+    html+="<hr><br>";
+
+    let questions=
+    document.querySelectorAll(
+    ".question"
+    );
+
+    questions.forEach(function(q){
+
+        let title=
+        q.querySelector(
+        "input[type=text]"
+        ).value;
+
+        html+="<div>";
+
+        html+="<b>";
+        html+=title;
+        html+="</b>";
+
+        html+="<br>";
+
+        html+="____________";
+
+        html+="<br><br>";
+
+        html+="</div>";
+
+    });
+
+    if(
+    document.getElementById(
+    "resumeCheck"
+    ).checked
+    ){
+
+        html+="<b>";
+
+        html+="Upload Resume PDF";
+
+        html+="</b>";
+
+    }
+
+    document.getElementById(
+    "preview"
+    ).innerHTML=html;
+
+}
+
+displayColumns();
 
 };
 
@@ -346,6 +494,14 @@ reader.readAsArrayBuffer(file);
 }
 
 );
+
+  document.addEventListener(
+"input",
+function(){
+
+updatePreview();
+
+});
 
 </script>
 
