@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Excel to Google Form Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body{
+            font-family: Arial;
+            margin:20px;
+        }
+        table{
+            border-collapse: collapse;
+            width:100%;
+        }
+        th,td{
+            border:1px solid #ddd;
+            padding:8px;
+        }
+        th{
+            background:#f2f2f2;
+        }
+        select{
+            width:150px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Excel to Google Form Generator</h2>
+
+<input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+
+<br><br>
+
+<div id="output"></div>
+
+<script>
+
+document.getElementById("excelFile").addEventListener("change", function(e){
+
+    let file=e.target.files[0];
+
+    let reader=new FileReader();
+
+    reader.onload=function(event){
+
+        let data=new Uint8Array(event.target.result);
+
+        let workbook=XLSX.read(data,{type:"array"});
+
+        let sheet=workbook.Sheets[workbook.SheetNames[0]];
+
+        let json=XLSX.utils.sheet_to_json(sheet,{header:1});
+
+        displayQuestions(json);
+
+    };
+
+    reader.readAsArrayBuffer(file);
+
+});
+
+function detectType(values){
+
+    values=values.filter(x=>x!="");
+
+    let unique=[...new Set(values)];
+
+    if(unique.length<=5 && unique.length>1){
+        return "Multiple Choice";
+    }
+
+    if(values.every(v=>!isNaN(v))){
+        return "Short Answer";
+    }
+
+    return "Short Answer";
+
+}
+
+function displayQuestions(data){
+
+    let headers=data[0];
+
+    let html="<table>";
+
+    html+="<tr>";
+    html+="<th>Column</th>";
+    html+="<th>Suggested Type</th>";
+    html+="<th>Options Detected</th>";
+    html+="</tr>";
+
+    for(let i=0;i<headers.length;i++){
+
+        let values=[];
+
+        for(let j=1;j<data.length;j++){
+            values.push(data[j][i]||"");
+        }
+
+        let type=detectType(values);
+
+        let unique=[...new Set(values.filter(x=>x!=""))];
+
+        html+="<tr>";
+
+        html+="<td>"+headers[i]+"</td>";
+
+        html+="<td>";
+        html+="<select>";
+        html+="<option "+(type=="Short Answer"?"selected":"")+">Short Answer</option>";
+        html+="<option "+(type=="Multiple Choice"?"selected":"")+">Multiple Choice</option>";
+        html+="<option>Dropdown</option>";
+        html+="<option>Checkbox</option>";
+        html+="<option>Paragraph</option>";
+        html+="</select>";
+        html+="</td>";
+
+        html+="<td>";
+
+        if(unique.length<=10){
+            html+=unique.join(", ");
+        }
+
+        html+="</td>";
+
+        html+="</tr>";
+
+    }
+
+    html+="</table>";
+
+    html+="<br>";
+    html+="<button onclick='alert(\"Next step: Generate Google Form\")'>Continue</button>";
+
+    document.getElementById("output").innerHTML=html;
+
+}
+
+</script>
+
+</body>
+</html>
