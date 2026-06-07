@@ -101,6 +101,11 @@
             cursor: pointer;
             margin-top: 20px;
             font-weight: bold;
+            margin-right: 10px;
+        }
+
+        button.script-btn {
+            background: #34A853;
         }
 
         button:hover {
@@ -111,6 +116,22 @@
             color: red;
             margin-left: 3px;
         }
+
+        #scriptOutputBox {
+            margin-top: 20px;
+            display: none;
+        }
+
+        #scriptCode {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            padding: 10px;
+            background: #272c34;
+            color: #abb2bf;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -119,7 +140,7 @@
     <div class="container">
         <div class="header">
             <h1>Excel to Form Builder</h1>
-            <p>Upload Excel and customize every field.</p>
+            <p>Upload Excel, customize configuration, and generate your Google Form automation code instantly.</p>
         </div>
 
         <div class="upload">
@@ -145,7 +166,15 @@
                         <input type="checkbox" id="resumeCheck"> Ask students to upload Resume PDF
                     </label>
                 </div>
+                
                 <button onclick="updatePreview()">Preview Form</button>
+                <button class="script-btn" onclick="generateGoogleFormScript()">Generate Google Form Code</button>
+
+                <div id="scriptOutputBox">
+                    <h3>Copy this Apps Script Code:</h3>
+                    <p style="font-size: 13px; color: #555;">Follow instructions below to run this in Google Drive.</p>
+                    <textarea id="scriptCode" readonly></textarea>
+                </div>
             </div>
 
             <div class="right">
@@ -164,7 +193,6 @@
     <script>
         let excelData = [];
 
-        // File Selection Listener
         document.getElementById("excelFile").addEventListener("change", function (e) {
             let file = e.target.files[0];
             if (!file) return;
@@ -181,14 +209,13 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // Renders questions based on Excel Headers
         function displayColumns() {
             if (excelData.length === 0) return;
             let headers = excelData[0];
             let html = "";
 
             for (let i = 0; i < headers.length; i++) {
-                if(!headers[i] || headers[i].toString().trim() === "") continue; // Skip blank column headers
+                if(!headers[i] || headers[i].toString().trim() === "") continue;
                 
                 html += `
                 <div class="question">
@@ -224,7 +251,6 @@
             updatePreview();
         }
 
-        // Generates UI dynamically in Live Preview panel
         function updatePreview() {
             let html = "";
             let title = document.getElementById("formTitle").value;
@@ -245,17 +271,10 @@
                 html += `<div class="previewQuestion">`;
                 html += `<b>${titleVal}</b>${isRequired ? '<span class="required-star">*</span>' : ''}<br><br>`;
 
-                // Generate smart input layouts based on user choices
-                if (typeVal === "Short Answer") {
-                    html += `<input type="text" placeholder="Short answer text" disabled style="width:80%; padding:5px;">`;
+                if (typeVal === "Short Answer" || typeVal === "Email" || typeVal === "Phone Number" || typeVal === "Number") {
+                    html += `<input type="text" placeholder="${typeVal} placeholder" disabled style="width:80%; padding:5px;">`;
                 } else if (typeVal === "Paragraph") {
                     html += `<textarea placeholder="Long answer text" disabled style="width:80%; height:50px; padding:5px;"></textarea>`;
-                } else if (typeVal === "Email") {
-                    html += `<input type="email" placeholder="email@example.com" disabled style="width:80%; padding:5px;">`;
-                } else if (typeVal === "Phone Number") {
-                    html += `<input type="tel" placeholder="Phone Number" disabled style="width:80%; padding:5px;">`;
-                } else if (typeVal === "Number") {
-                    html += `<input type="number" placeholder="0" disabled style="width:80%; padding:5px;">`;
                 } else if (typeVal === "Date") {
                     html += `<input type="date" disabled style="padding:5px;">`;
                 } else if (typeVal === "Time") {
@@ -264,30 +283,21 @@
                     html += `<input type="file" disabled>`;
                 } else if (typeVal === "Multiple Choice" || typeVal === "Checkboxes" || typeVal === "Dropdown") {
                     let options = optionsVal.split(",").map(opt => opt.trim()).filter(opt => opt !== "");
-                    
                     if (options.length === 0) {
                         html += `<i style="color:#aaa;">(No options provided yet)</i>`;
                     } else if (typeVal === "Multiple Choice") {
-                        options.forEach(opt => {
-                            html += `<label><input type="radio" name="${titleVal}" disabled> ${opt}</label><br>`;
-                        });
+                        options.forEach(opt => { html += `<label><input type="radio" disabled> ${opt}</label><br>`; });
                     } else if (typeVal === "Checkboxes") {
-                        options.forEach(opt => {
-                            html += `<label><input type="checkbox" disabled> ${opt}</label><br>`;
-                        });
+                        options.forEach(opt => { html += `<label><input type="checkbox" disabled> ${opt}</label><br>`; });
                     } else if (typeVal === "Dropdown") {
                         html += `<select disabled style="padding:5px; width:50%;"><option>Choose</option>`;
-                        options.forEach(opt => {
-                            html += `<option>${opt}</option>`;
-                        });
+                        options.forEach(opt => { html += `<option>${opt}</option>`; });
                         html += `</select>`;
                     }
                 }
-
                 html += "<br><br></div>";
             });
 
-            // Extra Logic for Resume Checkbox
             if (document.getElementById("resumeCheck").checked) {
                 html += `<div class="previewQuestion" style="border-left-color: #db4437;">`;
                 html += `<b>Upload Resume PDF</b><span class="required-star">*</span><br><br>`;
@@ -298,17 +308,23 @@
             document.getElementById("preview").innerHTML = html;
         }
 
-        // Listens to global inputs (typing names, changing configurations) to refresh live preview instantly
-        document.addEventListener("input", function (e) {
-            updatePreview();
-        });
-        
-        document.addEventListener("change", function (e) {
-            if(e.target.classList.contains("q-type") || e.target.id === "resumeCheck") {
-                updatePreview();
-            }
-        });
-    </script>
+        // --- NEW ARCHITECTURE: COMPILES TO GOOGLE APPS SCRIPT ---
+        function generateGoogleFormScript() {
+            let title = document.getElementById("formTitle").value;
+            let desc = document.getElementById("formDescription").value;
+            let questions = document.querySelectorAll(".question");
 
-</body>
-</html>
+            let script = `function createGoogleForm() {\n`;
+            script += `  // Create a new Google Form\n`;
+            script += `  var form = FormApp.create('${title.replace(/'/g, "\\'")}');\n`;
+            script += `  form.setDescription('${desc.replace(/'/g, "\\'")}');\n\n`;
+
+            questions.forEach(function (q) {
+                let titleVal = q.querySelector(".q-title").value.replace(/'/g, "\\'");
+                let typeVal = q.querySelector(".q-type").value;
+                let isRequired = q.querySelector(".q-required").checked;
+                let optionsVal = q.querySelector(".q-options").value;
+
+                script += `  // Question: ${titleVal}\n`;
+                
+                if (typeVal === "Short Answer" || typeVal === "Email" || typeVal === "Phone Number" || typeVal === "
