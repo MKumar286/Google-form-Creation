@@ -2,509 +2,313 @@
 <html lang="en">
 
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>
-
-Excel to Form Builder
-
-</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial;
-}
-
-body{
-background:#f3f5f7;
-padding:20px;
-}
-
-.container{
-
-max-width:1400px;
-margin:auto;
-
-}
-
-.header{
-
-background:white;
-padding:20px;
-border-radius:10px;
-margin-bottom:20px;
-
-}
-
-h1{
-
-margin-bottom:10px;
-
-}
-
-.upload{
-
-background:white;
-padding:20px;
-border-radius:10px;
-margin-bottom:20px;
-
-}
-
-input[type=file]{
-
-margin-top:15px;
-
-}
-
-.main{
-
-display:grid;
-
-grid-template-columns:60% 40%;
-
-gap:20px;
-
-}
-
-.left{
-
-background:white;
-padding:20px;
-border-radius:10px;
-
-}
-
-.right{
-
-background:white;
-padding:20px;
-border-radius:10px;
-
-}
-
-.question{
-
-border:1px solid #ddd;
-padding:15px;
-margin-bottom:15px;
-border-radius:10px;
-
-}
-
-.question input{
-
-width:100%;
-padding:8px;
-margin-top:5px;
-
-}
-
-.question select{
-
-width:100%;
-padding:8px;
-margin-top:5px;
-
-}
-
-.optionsBox{
-
-margin-top:10px;
-
-}
-
-.previewQuestion{
-
-margin-bottom:20px;
-
-}
-
-.resume{
-
-margin-top:20px;
-padding:15px;
-background:#fafafa;
-
-}
-
-button{
-
-padding:12px 20px;
-
-background:#4285F4;
-
-color:white;
-
-border:none;
-
-border-radius:5px;
-
-cursor:pointer;
-
-margin-top:20px;
-
-}
-
-button:hover{
-
-opacity:.9;
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to Form Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f3f5f7;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .upload {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .upload input[type=text] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+
+        input[type=file] {
+            margin-top: 15px;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 60% 40%;
+            gap: 20px;
+        }
+
+        .left, .right {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .question {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            background: #fdfdfd;
+        }
+
+        .question input[type=text], .question select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+
+        .previewQuestion {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-left: 4px solid #4285F4;
+            background: #fafafa;
+        }
+
+        .resume {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: .9;
+        }
+        
+        .required-star {
+            color: red;
+            margin-left: 3px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<div class="header">
-
-<h1>
-
-Excel to Form Builder
-
-</h1>
-
-<p>
-
-Upload Excel and customize every field.
-
-</p>
-
-</div>
-
-<div class="upload">
-
-<label>
-
-Form Title
-
-</label>
-
-<input
-type="text"
-id="formTitle"
-value="Placement Registration Form">
-
-<br><br>
-
-<label>
-
-Description
-
-</label>
-
-<input
-type="text"
-id="formDescription"
-value="Fill the details carefully">
-
-<br><br>
-
-<input
-type="file"
-id="excelFile"
-accept=".xlsx,.xls,.csv">
-
-</div>
-
-<div class="main">
-
-<div class="left">
-
-<h2>
-
-Detected Questions
-
-</h2>
-
-<br>
-
-<div id="questions">
-
-No file uploaded.
-
-</div>
-
-<div class="resume">
-
-<h3>
-
-Resume Upload
-
-</h3>
-
-<br>
-
-<label>
-
-<input
-type="checkbox"
-id="resumeCheck">
-
-Ask students to upload Resume PDF
-
-</label>
-
-</div>
-
-<button>
-
-Preview Form
-
-</button>
-
-</div>
-
-<div class="right">
-
-<h2>
-
-Live Preview
-
-</h2>
-
-<br>
-
-<div id="preview">
-
-<h3>
-
-Placement Registration Form
-
-</h3>
-
-<hr>
-
-<br>
-
-Upload Excel to generate preview.
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-
-let excelData=[];
-
-document
-.getElementById("excelFile")
-.addEventListener(
-"change",
-
-function(e){
-
-let file=e.target.files[0];
-
-let reader=new FileReader();
-
-reader.onload=function(evt){
-
-let data=
-new Uint8Array(evt.target.result);
-
-let workbook=
-XLSX.read(data,
-{type:"array"});
-
-let sheet=
-workbook.Sheets[
-workbook.SheetNames[0]
-];
-
-excelData=
-XLSX.utils.sheet_to_json(
-sheet,
-{header:1}
-);
-
-  function displayColumns(){
-
-    if(excelData.length==0) return;
-
-    let headers=excelData[0];
-
-    let html="";
-
-    for(let i=0;i<headers.length;i++){
-
-        html+=`
-        <div class="question">
-
-        <label>
-        Question Title
-        </label>
-
-        <input type="text"
-        value="${headers[i]}">
-
-        <br><br>
-
-        <label>
-        Question Type
-        </label>
-
-        <select>
-
-        <option>Short Answer</option>
-
-        <option>Paragraph</option>
-
-        <option>Multiple Choice</option>
-
-        <option>Checkboxes</option>
-
-        <option>Dropdown</option>
-
-        <option>Date</option>
-
-        <option>Time</option>
-
-        <option>Email</option>
-
-        <option>Phone Number</option>
-
-        <option>Number</option>
-
-        <option>File Upload</option>
-
-        <option>Resume Upload</option>
-
-        <option>Other</option>
-
-        </select>
-
-        <br><br>
-
-        <label>
-
-        <input type="checkbox">
-
-        Required
-
-        </label>
-
-        <br><br>
-
-        <label>
-
-        Options
-
-        </label>
-
-        <input type="text"
-        placeholder="Option1,Option2">
-
+    <div class="container">
+        <div class="header">
+            <h1>Excel to Form Builder</h1>
+            <p>Upload Excel and customize every field.</p>
         </div>
-        `;
 
-    }
+        <div class="upload">
+            <label><b>Form Title</b></label>
+            <input type="text" id="formTitle" value="Placement Registration Form">
+            <br><br>
+            <label><b>Description</b></label>
+            <input type="text" id="formDescription" value="Fill the details carefully">
+            <br><br>
+            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+        </div>
 
-    document.getElementById(
-    "questions"
-    ).innerHTML=html;
+        <div class="main">
+            <div class="left">
+                <h2>Detected Questions</h2>
+                <br>
+                <div id="questions">No file uploaded.</div>
+                
+                <div class="resume">
+                    <h3>Resume Upload</h3>
+                    <br>
+                    <label>
+                        <input type="checkbox" id="resumeCheck"> Ask students to upload Resume PDF
+                    </label>
+                </div>
+                <button onclick="updatePreview()">Preview Form</button>
+            </div>
 
-    updatePreview();
+            <div class="right">
+                <h2>Live Preview</h2>
+                <br>
+                <div id="preview">
+                    <h3>Placement Registration Form</h3>
+                    <p style="color: #666;">Fill the details carefully</p>
+                    <hr><br>
+                    Upload Excel to generate preview.
+                </div>
+            </div>
+        </div>
+    </div>
 
-}
+    <script>
+        let excelData = [];
 
-  function updatePreview(){
+        // File Selection Listener
+        document.getElementById("excelFile").addEventListener("change", function (e) {
+            let file = e.target.files[0];
+            if (!file) return;
 
-    let html="";
+            let reader = new FileReader();
+            reader.onload = function (evt) {
+                let data = new Uint8Array(evt.target.result);
+                let workbook = XLSX.read(data, { type: "array" });
+                let sheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                displayColumns();
+            };
+            reader.readAsArrayBuffer(file);
+        });
 
-    html+="<h3>";
-    html+=document.getElementById(
-    "formTitle"
-    ).value;
-    html+="</h3>";
+        // Renders questions based on Excel Headers
+        function displayColumns() {
+            if (excelData.length === 0) return;
+            let headers = excelData[0];
+            let html = "";
 
-    html+="<hr><br>";
+            for (let i = 0; i < headers.length; i++) {
+                if(!headers[i] || headers[i].toString().trim() === "") continue; // Skip blank column headers
+                
+                html += `
+                <div class="question">
+                    <label><b>Question Title</b></label>
+                    <input type="text" class="q-title" value="${headers[i]}">
+                    <br><br>
+                    <label><b>Question Type</b></label>
+                    <select class="q-type">
+                        <option value="Short Answer">Short Answer</option>
+                        <option value="Paragraph">Paragraph</option>
+                        <option value="Multiple Choice">Multiple Choice</option>
+                        <option value="Checkboxes">Checkboxes</option>
+                        <option value="Dropdown">Dropdown</option>
+                        <option value="Date">Date</option>
+                        <option value="Time">Time</option>
+                        <option value="Email">Email</option>
+                        <option value="Phone Number">Phone Number</option>
+                        <option value="Number">Number</option>
+                        <option value="File Upload">File Upload</option>
+                    </select>
+                    <br><br>
+                    <label>
+                        <input type="checkbox" class="q-required"> Required
+                    </label>
+                    <br><br>
+                    <label><b>Options (Comma separated for Choice/Checkbox/Dropdown)</b></label>
+                    <input type="text" class="q-options" placeholder="Option1,Option2,Option3">
+                </div>
+                `;
+            }
 
-    let questions=
-    document.querySelectorAll(
-    ".question"
-    );
+            document.getElementById("questions").innerHTML = html;
+            updatePreview();
+        }
 
-    questions.forEach(function(q){
+        // Generates UI dynamically in Live Preview panel
+        function updatePreview() {
+            let html = "";
+            let title = document.getElementById("formTitle").value;
+            let desc = document.getElementById("formDescription").value;
 
-        let title=
-        q.querySelector(
-        "input[type=text]"
-        ).value;
+            html += `<h3>${title}</h3>`;
+            html += `<p style="color: #666; font-size: 14px;">${desc}</p>`;
+            html += "<hr><br>";
 
-        html+="<div>";
+            let questions = document.querySelectorAll(".question");
 
-        html+="<b>";
-        html+=title;
-        html+="</b>";
+            questions.forEach(function (q) {
+                let titleVal = q.querySelector(".q-title").value;
+                let typeVal = q.querySelector(".q-type").value;
+                let isRequired = q.querySelector(".q-required").checked;
+                let optionsVal = q.querySelector(".q-options").value;
 
-        html+="<br>";
+                html += `<div class="previewQuestion">`;
+                html += `<b>${titleVal}</b>${isRequired ? '<span class="required-star">*</span>' : ''}<br><br>`;
 
-        html+="____________";
+                // Generate smart input layouts based on user choices
+                if (typeVal === "Short Answer") {
+                    html += `<input type="text" placeholder="Short answer text" disabled style="width:80%; padding:5px;">`;
+                } else if (typeVal === "Paragraph") {
+                    html += `<textarea placeholder="Long answer text" disabled style="width:80%; height:50px; padding:5px;"></textarea>`;
+                } else if (typeVal === "Email") {
+                    html += `<input type="email" placeholder="email@example.com" disabled style="width:80%; padding:5px;">`;
+                } else if (typeVal === "Phone Number") {
+                    html += `<input type="tel" placeholder="Phone Number" disabled style="width:80%; padding:5px;">`;
+                } else if (typeVal === "Number") {
+                    html += `<input type="number" placeholder="0" disabled style="width:80%; padding:5px;">`;
+                } else if (typeVal === "Date") {
+                    html += `<input type="date" disabled style="padding:5px;">`;
+                } else if (typeVal === "Time") {
+                    html += `<input type="time" disabled style="padding:5px;">`;
+                } else if (typeVal === "File Upload") {
+                    html += `<input type="file" disabled>`;
+                } else if (typeVal === "Multiple Choice" || typeVal === "Checkboxes" || typeVal === "Dropdown") {
+                    let options = optionsVal.split(",").map(opt => opt.trim()).filter(opt => opt !== "");
+                    
+                    if (options.length === 0) {
+                        html += `<i style="color:#aaa;">(No options provided yet)</i>`;
+                    } else if (typeVal === "Multiple Choice") {
+                        options.forEach(opt => {
+                            html += `<label><input type="radio" name="${titleVal}" disabled> ${opt}</label><br>`;
+                        });
+                    } else if (typeVal === "Checkboxes") {
+                        options.forEach(opt => {
+                            html += `<label><input type="checkbox" disabled> ${opt}</label><br>`;
+                        });
+                    } else if (typeVal === "Dropdown") {
+                        html += `<select disabled style="padding:5px; width:50%;"><option>Choose</option>`;
+                        options.forEach(opt => {
+                            html += `<option>${opt}</option>`;
+                        });
+                        html += `</select>`;
+                    }
+                }
 
-        html+="<br><br>";
+                html += "<br><br></div>";
+            });
 
-        html+="</div>";
+            // Extra Logic for Resume Checkbox
+            if (document.getElementById("resumeCheck").checked) {
+                html += `<div class="previewQuestion" style="border-left-color: #db4437;">`;
+                html += `<b>Upload Resume PDF</b><span class="required-star">*</span><br><br>`;
+                html += `<input type="file" accept=".pdf" disabled>`;
+                html += `</div>`;
+            }
 
-    });
+            document.getElementById("preview").innerHTML = html;
+        }
 
-    if(
-    document.getElementById(
-    "resumeCheck"
-    ).checked
-    ){
-
-        html+="<b>";
-
-        html+="Upload Resume PDF";
-
-        html+="</b>";
-
-    }
-
-    document.getElementById(
-    "preview"
-    ).innerHTML=html;
-
-}
-
-displayColumns();
-
-};
-
-reader.readAsArrayBuffer(file);
-
-}
-
-);
-
-  document.addEventListener(
-"input",
-function(){
-
-updatePreview();
-
-});
-
-</script>
+        // Listens to global inputs (typing names, changing configurations) to refresh live preview instantly
+        document.addEventListener("input", function (e) {
+            updatePreview();
+        });
+        
+        document.addEventListener("change", function (e) {
+            if(e.target.classList.contains("q-type") || e.target.id === "resumeCheck") {
+                updatePreview();
+            }
+        });
+    </script>
 
 </body>
-
 </html>
