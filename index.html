@@ -132,6 +132,15 @@
             border-radius: 5px;
             margin-top: 10px;
         }
+        
+        .status-msg {
+            padding: 10px;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 
@@ -151,13 +160,14 @@
             <input type="text" id="formDescription" value="Fill the details carefully">
             <br><br>
             <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+            <div id="statusMessage" class="status-msg"></div>
         </div>
 
         <div class="main">
             <div class="left">
                 <h2>Detected Questions</h2>
                 <br>
-                <div id="questions">No file uploaded.</div>
+                <div id="questions">No file uploaded yet. Click choose file above.</div>
                 
                 <div class="resume">
                     <h3>Resume Upload</h3>
@@ -191,36 +201,82 @@
     </div>
 
     <script>
-        let excelData = [];
+        let excelHeaders = [];
+
+        function showStatus(msg, isError = false) {
+            let box = document.getElementById("statusMessage");
+            box.innerText = msg;
+            box.style.display = "block";
+            box.style.background = isError ? "#f8d7da" : "#d4edda";
+            box.style.color = isError ? "#721c24" : "#155724";
+        }
 
         document.getElementById("excelFile").addEventListener("change", function (e) {
             let file = e.target.files[0];
             if (!file) return;
 
+            showStatus("Reading file...");
+
             let reader = new FileReader();
             reader.onload = function (evt) {
-                let data = new Uint8Array(evt.target.result);
-                let workbook = XLSX.read(data, { type: "array" });
-                let sheet = workbook.Sheets[workbook.SheetNames[0]];
-                
-                excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                displayColumns();
+                try {
+                    let data = new Uint8Array(evt.target.result);
+                    let workbook = XLSX.read(data, { type: "array" });
+                    
+                    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                        showStatus("Error: No sheets found in this Excel file.", true);
+                        return;
+                    }
+                    
+                    let firstSheetName = workbook.SheetNames[0];
+                    let sheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convert sheet content to raw arrays
+                    let rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    
+                    if (!rawRows || rawRows.length === 0) {
+                        showStatus("Error: The selected sheet appears completely empty.", true);
+                        return;
+                    }
+
+                    // Extract the headers from the very first non-empty row
+                    excelHeaders = [];
+                    for(let i = 0; i < rawRows.length; i++) {
+                        if(rawRows[i] && rawRows[i].length > 0) {
+                            // Filter out empty spaces or undefined header columns
+                            excelHeaders = rawRows[i].map(h => h ? h.toString().trim() : "").filter(h => h !== "");
+                            if(excelHeaders.length > 0) break;
+                        }
+                    }
+
+                    if(excelHeaders.length === 0) {
+                        showStatus("Could not find readable column headers in row 1.", true);
+                        return;
+                    }
+
+                    showStatus(`Success! Found ${excelHeaders.length} columns in sheet: "${firstSheetName}"`);
+                    displayColumns();
+                    
+                } catch(err) {
+                    console.error(err);
+                    showStatus("Parsing Error: Make sure this is a valid .xlsx, .xls, or .csv file.", true);
+                }
             };
+            
+            reader.onerror = function() {
+                showStatus("Error loading file from system storage.", true);
+            };
+            
             reader.readAsArrayBuffer(file);
         });
 
         function displayColumns() {
-            if (excelData.length === 0) return;
-            let headers = excelData[0];
             let html = "";
-
-            for (let i = 0; i < headers.length; i++) {
-                if(!headers[i] || headers[i].toString().trim() === "") continue;
-                
+            for (let i = 0; i < excelHeaders.length; i++) {
                 html += `
                 <div class="question">
                     <label><b>Question Title</b></label>
-                    <input type="text" class="q-title" value="${headers[i]}">
+                    <input type="text" class="q-title" value="${excelHeaders[i]}">
                     <br><br>
                     <label><b>Question Type</b></label>
                     <select class="q-type">
@@ -262,6 +318,10 @@
 
             let questions = document.querySelectorAll(".question");
 
+            if(questions.length === 0) {
+                html += "Upload Excel to generate preview.";
+            }
+
             questions.forEach(function (q) {
                 let titleVal = q.querySelector(".q-title").value;
                 let typeVal = q.querySelector(".q-type").value;
@@ -272,7 +332,7 @@
                 html += `<b>${titleVal}</b>${isRequired ? '<span class="required-star">*</span>' : ''}<br><br>`;
 
                 if (typeVal === "Short Answer" || typeVal === "Email" || typeVal === "Phone Number" || typeVal === "Number") {
-                    html += `<input type="text" placeholder="${typeVal} placeholder" disabled style="width:80%; padding:5px;">`;
+                    html += `<input type="text" placeholder="${typeVal} structural field" disabled style="width:80%; padding:5px;">`;
                 } else if (typeVal === "Paragraph") {
                     html += `<textarea placeholder="Long answer text" disabled style="width:80%; height:50px; padding:5px;"></textarea>`;
                 } else if (typeVal === "Date") {
@@ -308,11 +368,15 @@
             document.getElementById("preview").innerHTML = html;
         }
 
-        // --- NEW ARCHITECTURE: COMPILES TO GOOGLE APPS SCRIPT ---
         function generateGoogleFormScript() {
             let title = document.getElementById("formTitle").value;
             let desc = document.getElementById("formDescription").value;
             let questions = document.querySelectorAll(".question");
+
+            if(questions.length === 0) {
+                alert("Please upload a file with column headers first.");
+                return;
+            }
 
             let script = `function createGoogleForm() {\n`;
             script += `  // Create a new Google Form\n`;
@@ -327,4 +391,63 @@
 
                 script += `  // Question: ${titleVal}\n`;
                 
-                if (typeVal === "Short Answer" || typeVal === "Email" || typeVal === "Phone Number" || typeVal === "
+                if (typeVal === "Short Answer" || typeVal === "Email" || typeVal === "Phone Number" || typeVal === "Number") {
+                    script += `  var item = form.addTextItem();\n  item.setTitle('${titleVal}');\n`;
+                } else if (typeVal === "Paragraph") {
+                    script += `  var item = form.addParagraphTextItem();\n  item.setTitle('${titleVal}');\n`;
+                } else if (typeVal === "Date") {
+                    script += `  var item = form.addDateItem();\n  item.setTitle('${titleVal}');\n`;
+                } else if (typeVal === "Time") {
+                    script += `  var item = form.addTimeItem();\n  item.setTitle('${titleVal}');\n`;
+                } else if (typeVal === "File Upload") {
+                    script += `  var item = form.addFileUploadItem();\n  item.setTitle('${titleVal}');\n`;
+                } else if (typeVal === "Multiple Choice") {
+                    script += `  var item = form.addMultipleChoiceItem();\n  item.setTitle('${titleVal}');\n`;
+                    if(optionsVal.trim() !== "") {
+                        let optsArray = optionsVal.split(",").map(o => `'${o.trim().replace(/'/g, "\\'")}'`).join(",");
+                        script += `  item.setChoiceValues([${optsArray}]);\n`;
+                    }
+                } else if (typeVal === "Checkboxes") {
+                    script += `  var item = form.addCheckboxItem();\n  item.setTitle('${titleVal}');\n`;
+                    if(optionsVal.trim() !== "") {
+                        let optsArray = optionsVal.split(",").map(o => `'${o.trim().replace(/'/g, "\\'")}'`).join(",");
+                        script += `  item.setChoiceValues([${optsArray}]);\n`;
+                    }
+                } else if (typeVal === "Dropdown") {
+                    script += `  var item = form.addListItem();\n  item.setTitle('${titleVal}');\n`;
+                    if(optionsVal.trim() !== "") {
+                        let optsArray = optionsVal.split(",").map(o => `'${o.trim().replace(/'/g, "\\'")}'`).join(",");
+                        script += `  item.setChoiceValues([${optsArray}]);\n`;
+                    }
+                }
+
+                if (isRequired) {
+                    script += `  item.setRequired(true);\n`;
+                }
+                script += `\n`;
+            });
+
+            if (document.getElementById("resumeCheck").checked) {
+                script += `  // Mandatory Resume Field\n`;
+                script += `  var resumeItem = form.addFileUploadItem();\n`;
+                script += `  resumeItem.setTitle('Upload Resume PDF').setRequired(true);\n\n`;
+            }
+
+            script += `  Logger.log('Form Created successfully!');\n`;
+            script += `  Logger.log('Editor URL: ' + form.getEditUrl());\n`;
+            script += `}`;
+
+            document.getElementById("scriptCode").value = script;
+            document.getElementById("scriptOutputBox").style.display = "block";
+            document.getElementById("scriptOutputBox").scrollIntoView({ behavior: 'smooth' });
+        }
+
+        document.addEventListener("input", function () { updatePreview(); });
+        document.addEventListener("change", function (e) {
+            if(e.target.classList.contains("q-type") || e.target.id === "resumeCheck") {
+                updatePreview();
+            }
+        });
+    </script>
+</body>
+</html>
